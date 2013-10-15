@@ -1,6 +1,7 @@
 from xml.dom import minidom
 import urllib2
 import os
+import tarfile
 
 def create_csv_string(iterable_item):
   """
@@ -62,5 +63,40 @@ def download_archive(url, directory_path):
       print status,
   
   return file_name
+
+
+def get_file_list(file_suffix, root_directory='.'):
+  """
+  @Summary:  beginning from the directory (default from which the module is originated), walk the directory structure and
+             find all files with the desired suffix
+  @Param root_directory:  a string denoting the root directory to start the walk
+  @Param file_suffix: a string denoting the desired file suffix (e.g. '.txt').
+  """
+
+  #keep the file paths in a set
+  all_files=set()
+
+  for root, dirs, files in os.walk(root_directory):
+    for file in files:
+      if file.endswith(str(file_suffix)):
+        #construct the fully resolved file path
+        path=os.path.join(root,file)
+        all_files.add(path)
+  return all_files
+
+
+def unpack_all(file_list):
+  """
+  @Summary: unpacks compressed directories/files
+  @Parameter file_list: a set of absolute file paths
+
+  """
+  
+  #progress through the list of compressed files and unzip to the desired directory
+  for file in file_list:
+    if file.endswith('tar.gz'):
+      tf=tarfile.open(str(file),'r:gz')
+      tf.extractall(os.path.dirname(file))
+      
 
   

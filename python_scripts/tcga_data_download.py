@@ -3,8 +3,12 @@ import tcga_constants
 import datetime
 import time
 import os
+import sys
 
 def format_url(cohort):
+  """
+  Create a properly formatted url for downloading data from the NCI
+  """
   base_url=r"https://tcga-data.nci.nih.gov/tcga/damws/jobprocess/xml?"
   centers=tdu.create_csv_string(tcga_constants.CENTERS)
   platforms=tdu.create_csv_string(tcga_constants.PLATFORMS)
@@ -15,22 +19,27 @@ def format_url(cohort):
   level_param=r'&level=3' #level 3 data
   url=str(base_url)+str(disease_param)+str(center_param)+str(platform_param)+str(level_param)
 
-  temp_param='&sampleList=TCGA-67-6216-*'
+  if cohort=='LUAD':
+    temp_param='&sampleList=TCGA-67-6216-*'
+  if cohort=='LUSC':
+    temp_param='&sampleList=TCGA-21-1077-*'
 
   url+=str(temp_param)
   print str(url)
   return url
 
-def get_data():
+def get_data(output_data_directory):
+  """
+  Downloads the TCGA data (a number of tar.gz's) and places them in the specified directorys
+  """
 
-  FORMAT='%Y%m%d%H%M%S'
-  new_directory_path='tcga_data_'+datetime.datetime.now().strftime(FORMAT)
-  if not os.path.isdir(new_directory_path):
-    os.makedirs(new_directory_path)
-
-  cohorts=['LUAD']
+  cohorts=['LUAD', 'LUSC']
 
   for cohort in cohorts:
+    #create a directory for this cohort:
+    cohort_specific_directory=os.path.join(output_data_directory, cohort)
+    if not os.path.isdir(cohort_specific_directory):
+      os.makedirs(cohort_specific_directory)
     url=format_url(cohort)
     response_xml=tdu.generate_request(url)
     status_check_url=tdu.get_element_value(response_xml, 'status-check-url')
@@ -46,9 +55,28 @@ def get_data():
         print 'completed'
         break
     archive_url=tdu.get_element_value(status_check_xml, 'archive-url')
-    file_name=tdu.download_archive(archive_url, new_directory_path)
-    os.rename(os.path.join(new_directory_path,file_name) ,os.path.join(new_directory_path, str(cohort))+'.tar.gz') 
+    file_name=tdu.download_archive(archive_url, cohort_specific_directory)
+    #os.rename(os.path.join(cohort_specific_directory,file_name) ,os.path.join(output_data_directory, str(cohort))+'.tar.gz') 
 
 if __name__=='__main__':
-  get_data()
+  
+  if len(sys.argv)==2:
+    """
+    #create the directory to place the downloads into
+    output_data_directory=sys.argv[1]
+    FORMAT='%Y%m%d%H%M%S'
+    new_directory_path=os.path.join(output_data_directory,'tcga_data_'+datetime.datetime.now().strftime(FORMAT))
+    if not os.path.isdir(new_directory_path):
+      os.makedirs(new_directory_path)
+    get_data(new_directory_path)
+    """
+    #temp
+    new_directory_path='/home/tessella/gene_fusions/tcga_data_20131015120417'
+
+    archive_list=tdu.get_file_list('tar.gz', new_directory_path)
+    tdu.unpack_all(archive_list)
+    expression_file_list=tdu.get_file_list('exon_quantification.txt', new_directory_path)
+    for f in expression_file_list:
+      print f
+    
       
