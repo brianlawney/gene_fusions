@@ -4,6 +4,7 @@ import datetime
 import time
 import os
 import sys
+import config
 
 def format_url(cohort):
   """
@@ -56,7 +57,11 @@ def get_data(output_data_directory):
         break
     archive_url=tdu.get_element_value(status_check_xml, 'archive-url')
     file_name=tdu.download_archive(archive_url, cohort_specific_directory)
-    #os.rename(os.path.join(cohort_specific_directory,file_name) ,os.path.join(output_data_directory, str(cohort))+'.tar.gz') 
+
+
+  
+
+
 
 if __name__=='__main__':
   
@@ -71,12 +76,27 @@ if __name__=='__main__':
     get_data(new_directory_path)
     """
     #temp
-    new_directory_path='/home/tessella/gene_fusions/tcga_data_20131015120417'
+    new_directory_path='/home/tessella/gene_fusions/tcga_data_20131015131033'
 
+    #get a list of all the downloaded archives
     archive_list=tdu.get_file_list('tar.gz', new_directory_path)
+
+    #unpack the archives
     tdu.unpack_all(archive_list)
-    expression_file_list=tdu.get_file_list('exon_quantification.txt', new_directory_path)
+
+    #get a list of all the exon files
+    expression_file_list=tdu.get_file_list(tcga_constants.EXON_FILE_EXTENSION, new_directory_path)
+
+    #get a set of the unique directories containing the data files
+    dir_set=set()
     for f in expression_file_list:
-      print f
+      dir_set.add(os.path.dirname(f))
+    
+    #create a data structure to map from genomic position to genes
+    config.genomic_position_to_gene_map=tdu.create_genomic_mapping()
+
+    #within each directory(each disease cohort), merge the data files
+    for directory in dir_set:
+      tdu.merge_exon_files(directory)
     
       
