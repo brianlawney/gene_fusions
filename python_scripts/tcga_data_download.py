@@ -5,6 +5,7 @@ import time
 import os
 import sys
 import config
+import subprocess
 
 def format_url(cohort):
   """
@@ -21,9 +22,9 @@ def format_url(cohort):
   url=str(base_url)+str(disease_param)+str(center_param)+str(platform_param)+str(level_param)
 
   if cohort=='LUAD':
-    temp_param='&sampleList=TCGA-67-6216-*'
+    temp_param='&sampleList=TCGA-67-6216-*,TCGA-35-3615-*'
   if cohort=='LUSC':
-    temp_param='&sampleList=TCGA-21-1077-*'
+    temp_param='&sampleList=TCGA-21-1077-*,TCGA-21-1078-*'
 
   url+=str(temp_param)
   print str(url)
@@ -59,14 +60,27 @@ def get_data(output_data_directory):
     file_name=tdu.download_archive(archive_url, cohort_specific_directory)
 
 
-  
-
+def merge_all_output(cohort_directory): 
+  files=tdu.get_file_list(tcga_constants.MAPPED_FILE_SUFFIX, cohort_directory)
+  with open(os.path.join(cohort_directory, tcga_constants.MERGED_FILE),'w') as merged_file:
+    for f in files:
+      with open(f,'r') as inputfile:
+        for line in inputfile:
+          merged_file.write(line)
+     
+def remove_excess_files(cohort_directory): 
+  files=tdu.get_file_list(tcga_constants.MAPPED_FILE_SUFFIX, cohort_directory)
+  with open(os.path.join(cohort_directory, tcga_constants.MERGED_FILE),'w') as merged_file:
+    for f in files:
+      with open(f,'r') as inputfile:
+        for line in inputfile:
+          merged_file.write(line)
 
 
 if __name__=='__main__':
   
   if len(sys.argv)==2:
-    """
+    
     #create the directory to place the downloads into
     output_data_directory=sys.argv[1]
     FORMAT='%Y%m%d%H%M%S'
@@ -74,9 +88,9 @@ if __name__=='__main__':
     if not os.path.isdir(new_directory_path):
       os.makedirs(new_directory_path)
     get_data(new_directory_path)
-    """
+    
     #temp
-    new_directory_path='/home/tessella/gene_fusions/tcga_data_20131015131033'
+    #new_directory_path='/home/tessella/gene_fusions/tcga_data_20131015131033'
 
     #get a list of all the downloaded archives
     archive_list=tdu.get_file_list('tar.gz', new_directory_path)
@@ -84,19 +98,16 @@ if __name__=='__main__':
     #unpack the archives
     tdu.unpack_all(archive_list)
 
-    #get a list of all the exon files
-    expression_file_list=tdu.get_file_list(tcga_constants.EXON_FILE_EXTENSION, new_directory_path)
+    #get a list of the directories (the cohort directories):
+    directory_list=[d for d in os.listdir(new_directory_path) if os.path.isdir(os.path.join(new_directory_path, d))]
 
-    #get a set of the unique directories containing the data files
-    dir_set=set()
-    for f in expression_file_list:
-      dir_set.add(os.path.dirname(f))
+    #within each directory(each disease cohort), merge the data files by calling a java process 
+    for directory in directory_list:
+      cohort_directory=os.path.join(new_directory_path, directory)
+      subprocess.call(['java', '-jar', tcga_constants.FILE_MERGE_JAR, cohort_directory, tcga_constants.MAPPED_FILE_SUFFIX])
+      merge_all_output(cohort_directory)
+
     
-    #create a data structure to map from genomic position to genes
-    config.genomic_position_to_gene_map=tdu.create_genomic_mapping()
 
-    #within each directory(each disease cohort), merge the data files
-    for directory in dir_set:
-      tdu.merge_exon_files(directory)
     
       

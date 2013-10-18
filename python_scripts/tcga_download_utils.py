@@ -101,23 +101,19 @@ def unpack_all(file_list):
       tf=tarfile.open(str(file),'r:gz')
       tf.extractall(os.path.dirname(file))
  
-   
+"""   
 def traverse_upwards(directory, level):
-  """
-  walks up directory tree to get parent paths
-  """  
+
   if level==1:
     return os.path.dirname(directory)
   else:
     return traverse_upwards(os.path.dirname(directory), level-1)
+"""
 
 
-
-  
+"""
 def create_sample_mapping(cohort_specific_directory):
-  """
-  For the directory passed as argument, map the file names to the TCGA-XX-XXXX sample barcodes they correspond to
-  """
+
   map_file_path=os.path.join(cohort_specific_directory, 'FILE_SAMPLE_MAP.txt')
   with open(map_file_path, 'r') as map_file:
     #read the contents into a dictionary
@@ -131,7 +127,7 @@ def create_sample_mapping(cohort_specific_directory):
       else:
         line_num+=1
   return file_to_sample_mapping
-  
+ 
 
 
 def determine_gene(this_exon):
@@ -155,9 +151,6 @@ def write_to_file(directory, gene_name, sample_id, exon_list):
 
 
 def merge_exon_files(containing_directory):
-  """
-  Merge the exon_quantification files in the directory passed as an argument
-  """
 
   #get the directory for this cohort
   cohort_specific_directory=traverse_upwards(containing_directory,3)
@@ -225,4 +218,5 @@ def create_genomic_mapping():
         new_list.append(this_gene)
         mapping[chromosome]=new_list
   return mapping
+"""
 

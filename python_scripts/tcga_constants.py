@@ -1,3 +1,8 @@
+FILE_MERGE_JAR='/home/tessella/gene_fusions/java/build/jar/MergeFiles.jar'
+
+MAPPED_FILE_SUFFIX='_mapped.txt'
+MERGED_FILE='merged_samples.txt'
+
 EXON_FILE_EXTENSION='exon_quantification.txt'
 
 MERGED_FILE_NAME='merged_samples.txt'
